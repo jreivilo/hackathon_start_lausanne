@@ -8,6 +8,24 @@ from chainlit import AskUserMessage, Message, on_chat_start
 from typing import Optional
 import chainlit as cl
 
+from langfuse import Langfuse
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the keys from environment variables
+secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+host = os.getenv("LANGFUSE_HOST")
+
+langfuse = Langfuse(
+	secret_key=secret_key,
+	public_key=public_key,
+	host=host
+)
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 	# Fetch the user matching username from your database
@@ -48,6 +66,10 @@ async def main(message: cl.Message):
 	"""
 	Main entry point for handling incoming messages from Chainlit.
 	"""
+	# Get user id
+	user_id = message.user.id
+	print(f"User ID: {user_id}")
+
 	# Create a loading message
 	loading_msg = await cl.Message(content="⏳ Génération de la réponse...").send()
 	
@@ -80,3 +102,10 @@ async def downvote_callback(action: cl.Action):
 	Handles the downvote action.
 	"""
 	await cl.Message(content="We'll do better next time!").send()
+
+@cl.on_chat_end
+async def on_chat_end():
+	"""
+	Cleanup tasks when the chat ends.
+	"""
+	pass
