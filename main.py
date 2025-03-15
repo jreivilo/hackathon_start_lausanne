@@ -5,6 +5,32 @@ from src.handlers.message_handler import process_message
 import chainlit as cl
 from chainlit import AskUserMessage, Message, on_chat_start
 
+from typing import Optional
+import chainlit as cl
+
+@cl.password_auth_callback
+def auth_callback(username: str, password: str):
+	# Fetch the user matching username from your database
+	# and compare the hashed password with the value stored in the database
+	if (username, password) == ("admin", "admin"):
+		return cl.User(
+			identifier="admin", metadata={"role": "admin", "provider": "credentials"}
+		)
+	elif (username, password) == ("user", "user"):
+		return cl.User(
+			identifier="user", metadata={"role": "user", "provider": "credentials"}
+		)
+	elif (username, password) == ("user1", "password1"):
+		return cl.User(
+			identifier="user1", metadata={"role": "user", "provider": "credentials"}
+		)
+	elif (username, password) == ("user2", "password2"):
+		return cl.User(
+			identifier="user2", metadata={"role": "user", "provider": "credentials"}
+		)
+	else:
+		return None
+
 @on_chat_start
 async def main():
 	content = (
