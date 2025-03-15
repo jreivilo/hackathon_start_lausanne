@@ -43,7 +43,7 @@ async def process_message(message: cl.Message):
         explanation = function_response.get("explanation", "")
         
         # Build an enriched response
-        response_text = format_response(structured_data, explanation)
+        response_text = explanation
     else:
         if last_json_response:
             # Use the last JSON response to make a new query to Claude
