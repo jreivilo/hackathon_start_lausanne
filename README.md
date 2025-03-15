@@ -28,27 +28,19 @@ uv run chainlit secret
 ```
 
 ### 4️⃣ Fill the `.env` File
-Create a `.env` file in the project root and add the following environment variables:
+Copy the `.env.template` file and rename it to `.env`. Then, update the necessary environment variables:
 
-```env
-CHAINLIT_SECRET=<your_generated_secret>
-OTHER_ENV_VARIABLE=<your_value>
+```bash
+cp .env.template .env
 ```
 
-Make sure to replace `<your_generated_secret>` with the actual secret generated in the previous step.
+Edit `.env` and replace placeholders with actual values.
 
 ### 5️⃣ Run the Project
 To execute the code, use the following command:
 
 ```bash
 uv run chainlit run main.py -w
-```
-
-### 6️⃣ Add New Packages
-To install additional dependencies, use:
-
-```bash
-uv add <package>
 ```
 
 ---
@@ -62,4 +54,3 @@ uv add <package>
 ---
 
 🚀 Happy Hacking! 🎉
-
