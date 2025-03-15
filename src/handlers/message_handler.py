@@ -1,5 +1,5 @@
 import json
-import base64
+
 import chainlit as cl
 
 from src.model.query_claude_3_7 import query_claude_3_7, function_calling_query, create_bedrock_payload
@@ -13,10 +13,10 @@ last_json_response = None
 async def process_message(message: cl.Message, trace):
 	"""
 	Process incoming messages and generate appropriate responses.
-	
+
 	Args:
 		message: The incoming Chainlit message
-		
+
 	Returns:
 		Tuple containing response text and elements to display
 	"""
@@ -33,7 +33,7 @@ async def process_message(message: cl.Message, trace):
 		span.end(
 			output = image_list
 		)
-		
+
 		# Get structured response from Claude with images
 		function_response = function_calling_query(
 			input_text=message.content,
@@ -41,14 +41,14 @@ async def process_message(message: cl.Message, trace):
 			images=image_list,
 			trace=trace
 		)
-		
+
 		# Store the JSON response
 		last_json_response = function_response.get("structured_data", {})
-		
+
 		# Extract structured data and explanation
 		structured_data = last_json_response
 		explanation = function_response.get("explanation", "")
-		
+
 		# Build an enriched response
 		response_text = explanation
 	else:
@@ -67,13 +67,13 @@ async def process_message(message: cl.Message, trace):
 			Keep your response clear, precise, and concise - no more than 3-4 sentences.
 			Respond in the same language as the user's question.
 			"""
-			
+
 			# Create payload using create_bedrock_payload
 			span = trace.span(
 				name="Create payload for Bedrock",
 				input=explanation_prompt
 			)
-			
+
 			explanation_response = query_claude_3_7(explanation_prompt, trace, goal="Answer user question")
 
 			response_text = explanation_response['content'][0]['text']
@@ -96,7 +96,7 @@ async def process_message(message: cl.Message, trace):
 	# Log structured data for debugging
 	if last_json_response:
 		print(f"Structured data: {json.dumps(last_json_response, indent=2)}")
-	
+
 	return response_text, elements, last_json_response
 
 def format_response(structured_data, explanation):

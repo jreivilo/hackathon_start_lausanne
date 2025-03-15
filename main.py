@@ -137,16 +137,17 @@ async def main(message: cl.Message):
 		# Determine actions based on last_json_response
 		actions = []
 		if last_json_response:
+			user_id = cl.user_session.get("user").identifier  # Get the user identifier
 			actions = [
 				cl.Action(
 					name="add_product", 
 					label="✅ Add current product to my list",
-					payload={"action": "add"}
+					payload={"action": "add", "product_data": last_json_response, "user_id": user_id}
 				),
 				cl.Action(
 					name="skip_product", 
 					label="❌ Skip",
-					payload={"action": "skip"}
+					payload={"action": "skip", "user_id": user_id}
 				)
 			]
 
@@ -208,8 +209,36 @@ async def add_product_callback(action: cl.Action):
 	"""
 	Handles adding a product to the user's consumed products list.
 	"""
+	# Extract user identifier from the action payload
+	user_id = action.payload.get("user_id")
+
+	# Extract product information from the action payload
+	product_data = action.payload.get("product_data", {})
+
+	product_name = product_data.get("product", {}).get("name", "Unknown Product")
+
+	# Add product to the user's list
+	if user_id not in consumed_products:
+		consumed_products[user_id] = []
+	
+	consumed_products[user_id].append(product_data)
+
 	# Send confirmation message
-	await cl.Message(content="✅ Product has been added to your consumed list.").send()
+	await cl.Message(content=f"✅ {product_name} has been added to your consumed list.").send()
+
+
+	# Optionally, show the current list of consumed products for the user
+	product_list = "\n".join([f"- {product.get('product', {}).get('name', 'Unknown Product')}" for product in consumed_products[user_id]])
+	
+	# Calculate total calories from all products in the user's list
+	total_calories = 0
+	for product in consumed_products[user_id]:
+		if isinstance(product, dict) and 'product' in product:
+			print(product.get('product', {}).get('nutritive_value', {}).get('calories', 0))
+			total_calories += product.get('product', {}).get('nutritive_value', {}).get('calories', 0)
+	
+	await cl.Message(content=f"📋 Your current list:\n{product_list}\n\n"
+					   f"📊 Total calories today: {total_calories} calories").send()
 
 @cl.action_callback("skip_product")
 async def skip_product_callback(action: cl.Action):
