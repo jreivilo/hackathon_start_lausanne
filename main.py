@@ -128,13 +128,16 @@ async def main(message: cl.Message):
 				await asyncio.sleep(1.5)
 		
 		# Process the message and get a response
-		response_text, elements = await process_message(message, trace)
+		response = await process_message(message, trace)
 		
-		# Create a new message with the final response and product tracking buttons
-		final_msg = cl.Message(
-			content=response_text,
-			elements=elements,
-			actions=[
+		# Unpack the response
+		response_text, elements = response[:2]
+		last_json_response = response[2] if len(response) > 2 else None
+
+		# Determine actions based on last_json_response
+		actions = []
+		if last_json_response:
+			actions = [
 				cl.Action(
 					name="add_product", 
 					label="✅ Add current product to my list",
@@ -146,6 +149,12 @@ async def main(message: cl.Message):
 					payload={"action": "skip"}
 				)
 			]
+
+		# Create a new message with the final response and product tracking buttons if applicable
+		final_msg = cl.Message(
+			content=response_text,
+			elements=elements,
+			actions=actions
 		)
 		await final_msg.send()
 		
@@ -200,14 +209,14 @@ async def add_product_callback(action: cl.Action):
 	Handles adding a product to the user's consumed products list.
 	"""
 	# Send confirmation message
-	await cl.Message(content=f"✅  a été ajouté à votre liste de produits consommés.").send()
+	await cl.Message(content="✅ Product has been added to your consumed list.").send()
 
 @cl.action_callback("skip_product")
 async def skip_product_callback(action: cl.Action):
 	"""
 	Handles skipping a product (not adding it to the consumed list).
 	"""
-	await cl.Message(content="⏭️ Produit non ajouté à votre liste.").send()
+	await cl.Message(content="⏭️ Product not added to your list.").send()
 
 @cl.on_chat_end
 async def on_chat_end():
