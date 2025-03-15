@@ -30,6 +30,24 @@ langfuse = Langfuse(
 # Simple in-memory storage for consumed products
 consumed_products = {}
 
+# Simple in-memory storage for user IDs
+dict_user_ids = {}
+
+def get_or_create_user_id(user_name: str) -> int:
+	"""
+	Get or create a user ID for the given user name.
+	
+	Args:
+		user_name: The user name to get or create an ID for.
+	
+	Returns:
+		int: The user ID.
+	"""
+	print(f"User name: {user_name}")
+	if user_name not in dict_user_ids:
+		dict_user_ids[user_name] = len(dict_user_ids) + 1
+	return dict_user_ids[user_name]
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 	# Fetch the user matching username from your database
@@ -71,6 +89,20 @@ async def main(message: cl.Message):
 	Main entry point for handling incoming messages from Chainlit.
 	"""
 
+	session_id = cl.user_session.get("id")
+	user_name = cl.user_session.get("user").identifier
+	user_id = get_or_create_user_id(user_name)
+
+	print(f"Received message from {user_name} (session ID: {session_id})")
+	print(f"Message content: {message.content}")
+
+	trace = langfuse.trace(
+		name="Question",
+		input=message.content,
+		session_id=session_id,
+		user_id=user_id,
+	)
+
 	# Create a loading message with initial text
 	loading_msg = cl.Message(content="⏳ Initializing request...")
 	loading_msg_id = await loading_msg.send()
@@ -96,7 +128,7 @@ async def main(message: cl.Message):
 				await asyncio.sleep(1.5)
 		
 		# Process the message and get a response
-		response_text, elements = await process_message(message)
+		response_text, elements = await process_message(message, trace)
 		
 		# Create a new message with the final response and product tracking buttons
 		final_msg = cl.Message(
@@ -119,6 +151,10 @@ async def main(message: cl.Message):
 		
 		# Remove the loading message
 		await loading_msg.remove()
+
+		# Add repopnse to the trace
+		trace.update(output=response_text)
+		trace.close()
 	except Exception as e:
 		# Update with error message
 		loading_msg.content = f"❌ An error occurred: {str(e)}"
@@ -163,32 +199,8 @@ async def add_product_callback(action: cl.Action):
 	"""
 	Handles adding a product to the user's consumed products list.
 	"""
-	# user_id = action.from_user.identifier
-	
-	# # Get the product name from the message that triggered the action
-	# product_name = "Unknown Product"  # Default value
-	
-	# # Try to extract product name from the message content
-	# if action.message and action.message.content:
-	# 	# Look for product name in the message content
-	# 	content_lines = action.message.content.split('\n')
-	# 	for line in content_lines:
-	# 		if "Response" in line and len(line.split("Response")) > 1:
-	# 			product_name = line.split("Response")[1].strip()
-	# 			break
-	
-	# # Add to user's consumed products
-	# if user_id not in consumed_products:
-	# 	consumed_products[user_id] = []
-	
-	# consumed_products[user_id].append(product_name)
-	
 	# Send confirmation message
 	await cl.Message(content=f"✅  a été ajouté à votre liste de produits consommés.").send()
-	
-	# # Show current list
-	# product_list = "\n".join([f"- {product}" for product in consumed_products[user_id]])
-	# await cl.Message(content=f"📋 Votre liste actuelle:\n{product_list}").send()
 
 @cl.action_callback("skip_product")
 async def skip_product_callback(action: cl.Action):

@@ -11,7 +11,7 @@ from src.config.schemas import get_analysis_schema
 # Global variable to store the last JSON response
 last_json_response = None
 
-async def process_message(message: cl.Message):
+async def process_message(message: cl.Message, trace):
     """
     Process incoming messages and generate appropriate responses.
     
