@@ -1,59 +1,59 @@
 def get_analysis_schema():
 	"""
-	Returns the JSON schema for structured analysis.
+	Retourne le schéma JSON pour l'analyse structurée.
 	"""
 	return {
 		"properties": {
-			"product": {
+			"produit": {
 				"type": "object",
-				"description": "Detailed information about the food product",
+				"description": "Informations détaillées sur le produit alimentaire",
 				"properties": {
-					"name": {
+					"nom": {
 						"type": "string",
-						"description": "Name of the food product"
+						"description": "Nom du produit alimentaire"
 					},
-					"origin": {
+					"origine": {
 						"type": "string",
-						"description": "Origin of the food product"
+						"description": "Origine du produit alimentaire"
 					},
-					"ingredients": {
+					"ingrédients": {
 						"type": "array",
-						"description": "List of ingredients in the food product",
+						"description": "Liste des ingrédients du produit alimentaire",
 						"items": {
 							"type": "string"
 						}
 					},
-					"nutritive_value": {
+					"valeur_nutritive": {
 						"type": "object",
-						"description": "Basic nutritive values of the food product",
+						"description": "Valeurs nutritives de base du produit alimentaire",
 						"properties": {
 							"calories": {
 								"type": "number",
-								"description": "Calories in the food product"
+								"description": "Calories dans le produit alimentaire"
 							},
-							"protein": {
+							"protéines": {
 								"type": "number",
-								"description": "Protein content in grams"
+								"description": "Teneur en protéines en grammes"
 							},
-							"fat": {
+							"graisses": {
 								"type": "number",
-								"description": "Fat content in grams"
+								"description": "Teneur en graisses en grammes"
 							},
-							"carbohydrates": {
+							"glucides": {
 								"type": "number",
-								"description": "Carbohydrates content in grams"
+								"description": "Teneur en glucides en grammes"
 							},
-							"sugar": {
+							"sucre": {
 								"type": "number",
-								"description": "Sugar content in grams"
+								"description": "Teneur en sucre en grammes"
 							},
-							"fiber": {
+							"fibres": {
 								"type": "number",
-								"description": "Fiber content in grams"
+								"description": "Teneur en fibres en grammes"
 							},
 							"sodium": {
 								"type": "number",
-								"description": "Sodium content in milligrams"
+								"description": "Teneur en sodium en milligrammes"
 							}
 						}
 					}
