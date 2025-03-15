@@ -71,16 +71,18 @@ def auth_callback(username: str, password: str):
 	else:
 		return None
 
-@on_chat_start
-async def main():
-	content = (
-		"Welcome! I'm your personal wellness coach, here to help you decode the nutritive aspects of food and its ingredients. "
-		"For the best advice, please share some details about your general health condition. \n\n"
-	)
 
-	await Message(
-		content=content + "Let's get started on optimizing your nutrition! Please provide me with pictures of the food you are consuming today."
-	).send()
+
+# @on_chat_start
+# async def main():
+# 	content = (
+# 		"Welcome! I'm your personal wellness coach, here to help you decode the nutritive aspects of food and its ingredients. "
+# 		"For the best advice, please share some details about your general health condition. \n\n"
+# 	)
+
+# 	await Message(
+# 		content=content + "Let's get started on optimizing your nutrition! Please provide me with pictures of the food you are consuming today."
+# 	).send()
 
 
 @cl.on_message
@@ -88,6 +90,12 @@ async def main(message: cl.Message):
 	"""
 	Main entry point for handling incoming messages from Chainlit.
 	"""
+	global last_json_response
+
+	# Intercepter les commandes spéciales des starters
+	if message.content.startswith("!"):
+		await handle_starter_command(message)
+		return
 
 	session_id = cl.user_session.get("id")
 	user_name = cl.user_session.get("user").identifier
@@ -127,8 +135,12 @@ async def main(message: cl.Message):
 			if i < len(progress_steps) - 1:
 				await asyncio.sleep(1.5)
 		
+		# Initialize consumed_products for this user if it doesn't exist
+		if user_id not in consumed_products:
+			consumed_products[user_id] = []
+		
 		# Process the message and get a response
-		response = await process_message(message, trace)
+		response = await process_message(message, trace, consumed_products[user_id])
 		
 		# Unpack the response
 		response_text, elements = response[:2]
@@ -186,7 +198,7 @@ async def animate_progress(message, message_id, steps):
 			await message.update()
 			
 			# Wait for a short time before next update
-			await asyncio.sleep(1.5)
+			await asyncio.sleep(2.5)
 		
 		# If we've gone through all steps but processing is still ongoing,
 		# show a cycling animation
@@ -253,3 +265,93 @@ async def on_chat_end():
 	Cleanup tasks when the chat ends.
 	"""
 	pass
+
+@cl.set_starters
+async def set_starters():
+	return [
+		cl.Starter(
+			label="📋 View my daily consumption",
+			message="!view_consumption",  # Message spécial qui sera intercepté
+		),
+		cl.Starter(
+			label="🔍 Analyze a new product", 
+			message="!analyze_product",  # Message spécial qui sera intercepté
+		),
+		cl.Starter(
+			label="📊 Nutrition summary",
+			message="!nutrition_summary",  # Message spécial qui sera intercepté
+		),
+		cl.Starter(
+			label="💡 Healthy alternatives",
+			message="!healthy_alternatives",  # Message spécial qui sera intercepté
+		)
+	]
+
+async def handle_starter_command(message: cl.Message):
+	"""
+	Handle special commands triggered by starters.
+	"""
+	user_id = cl.user_session.get("user").identifier
+	command = message.content.strip()
+
+	if command == "!view_consumption":
+		# Afficher la liste des produits consommés
+		if user_id in consumed_products and consumed_products[user_id]:
+			product_list = "\n".join([f"- {product.get('product', {}).get('name', 'Unknown Product')}" 
+									 for product in consumed_products[user_id]])
+			
+			# Calculer le total des calories
+			total_calories = 0
+			for product in consumed_products[user_id]:
+				if isinstance(product, dict) and 'product' in product:
+					print(product)
+					total_calories += product.get('product', {}).get('nutritive_value', {}).get('calories', 0)
+			
+			await cl.Message(content=f"📋 Your daily consumption:\n{product_list}\n\n"
+									   f"📊 Total calories today: {total_calories} calories").send()
+		else:
+			await cl.Message(content="You haven't added any products to your list yet.").send()
+	
+	elif command == "!analyze_product":
+		# Inviter l'utilisateur à télécharger une image ou décrire un produit
+		await cl.Message(content="Please upload an image of the product you want to analyze, or describe it in detail.").send()
+	
+	elif command == "!nutrition_summary":
+		# Générer un résumé nutritionnel
+		if user_id in consumed_products and consumed_products[user_id]:
+			# Calculer les totaux nutritionnels
+			total_calories = 0
+			total_protein = 0
+			total_carbs = 0
+			total_fat = 0
+			
+			for product in consumed_products[user_id]:
+				if isinstance(product, dict) and 'product' in product:
+					nutritive_values = product.get('product', {}).get('nutritive_value', {})
+					total_calories += nutritive_values.get('calories', 0)
+					total_protein += nutritive_values.get('protein', 0)
+					total_carbs += nutritive_values.get('carbohydrates', 0)
+					total_fat += nutritive_values.get('fat', 0)
+			
+			summary = f"""📊 **Nutrition Summary for Today**
+
+**Total Calories:** {total_calories} kcal
+**Total Protein:** {total_protein} g
+**Total Carbohydrates:** {total_carbs} g
+**Total Fat:** {total_fat} g
+
+Based on a 2000 kcal diet, you've consumed approximately {(total_calories/2000)*100:.1f}% of your daily calorie needs.
+"""
+			await cl.Message(content=summary).send()
+		else:
+			await cl.Message(content="You haven't added any products to your list yet.").send()
+	
+	elif command == "!healthy_alternatives":
+		# Suggérer des alternatives plus saines
+		if user_id in consumed_products and consumed_products[user_id]:
+			await cl.Message(content="Analyzing your consumption to suggest healthier alternatives...").send()
+			# Ici, vous pourriez appeler une fonction qui génère des suggestions basées sur les produits consommés
+			# Pour cet exemple, nous utilisons une réponse générique
+			await cl.Message(content="Here are some healthier alternatives to consider for your next meals...").send()
+		else:
+			await cl.Message(content="You haven't added any products to your list yet.").send()

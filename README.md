@@ -4,6 +4,13 @@
 📅 **Date:** 14-16 March 2025  
 📍 **Location:** Lausanne  
 
+## Documentation
+For complete project documentation, please consult the following documents:
+
+- [General Documentation](DOCUMENTATION.md) - Complete project overview
+- [Developer Guide](DEVELOPER_GUIDE.md) - Detailed technical guide for developers
+- [User Guide](USER_GUIDE.md) - End-user instructions
+
 ## Project Setup
 
 ### 1️⃣ Install `uv`
@@ -53,4 +60,4 @@ uv run chainlit run main.py -w
 
 ---
 
-🚀 Happy Hacking! 🎉
+�� Happy Hacking! 🎉
