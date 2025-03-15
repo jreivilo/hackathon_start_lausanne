@@ -76,7 +76,7 @@ async def process_message(message: cl.Message, trace):
     if last_json_response:
         print(f"Structured data: {json.dumps(last_json_response, indent=2)}")
     
-    return response_text, elements
+    return response_text, elements, last_json_response
 
 def format_response(structured_data, explanation):
     """
