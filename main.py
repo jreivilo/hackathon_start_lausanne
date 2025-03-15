@@ -27,6 +27,9 @@ langfuse = Langfuse(
 	host=host
 )
 
+# Simple in-memory storage for consumed products
+consumed_products = {}
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 	# Fetch the user matching username from your database
@@ -67,9 +70,6 @@ async def main(message: cl.Message):
 	"""
 	Main entry point for handling incoming messages from Chainlit.
 	"""
-	# Get user id
-	user_id = message.user.id
-	print(f"User ID: {user_id}")
 
 	# Create a loading message with initial text
 	loading_msg = cl.Message(content="⏳ Initializing request...")
@@ -98,11 +98,27 @@ async def main(message: cl.Message):
 		# Process the message and get a response
 		response_text, elements = await process_message(message)
 		
-		# Update the loading message with the final response
-		loading_msg.content = response_text
-		if elements:
-			loading_msg.elements = elements
-		await loading_msg.update()
+		# Create a new message with the final response and product tracking buttons
+		final_msg = cl.Message(
+			content=response_text,
+			elements=elements,
+			actions=[
+				cl.Action(
+					name="add_product", 
+					label="✅ Add current product to my list",
+					payload={"action": "add"}
+				),
+				cl.Action(
+					name="skip_product", 
+					label="❌ Skip",
+					payload={"action": "skip"}
+				)
+			]
+		)
+		await final_msg.send()
+		
+		# Remove the loading message
+		await loading_msg.remove()
 	except Exception as e:
 		# Update with error message
 		loading_msg.content = f"❌ An error occurred: {str(e)}"
@@ -142,19 +158,44 @@ async def animate_progress(message, message_id, steps):
 		# Log any unexpected errors
 		print(f"Animation error: {e}")
 
-@cl.action_callback("upvote")
-async def upvote_callback(action: cl.Action):
+@cl.action_callback("add_product")
+async def add_product_callback(action: cl.Action):
 	"""
-	Handles the upvote action.
+	Handles adding a product to the user's consumed products list.
 	"""
-	await cl.Message(content="Thank you for your positive feedback!").send()
+	# user_id = action.from_user.identifier
+	
+	# # Get the product name from the message that triggered the action
+	# product_name = "Unknown Product"  # Default value
+	
+	# # Try to extract product name from the message content
+	# if action.message and action.message.content:
+	# 	# Look for product name in the message content
+	# 	content_lines = action.message.content.split('\n')
+	# 	for line in content_lines:
+	# 		if "Response" in line and len(line.split("Response")) > 1:
+	# 			product_name = line.split("Response")[1].strip()
+	# 			break
+	
+	# # Add to user's consumed products
+	# if user_id not in consumed_products:
+	# 	consumed_products[user_id] = []
+	
+	# consumed_products[user_id].append(product_name)
+	
+	# Send confirmation message
+	await cl.Message(content=f"✅  a été ajouté à votre liste de produits consommés.").send()
+	
+	# # Show current list
+	# product_list = "\n".join([f"- {product}" for product in consumed_products[user_id]])
+	# await cl.Message(content=f"📋 Votre liste actuelle:\n{product_list}").send()
 
-@cl.action_callback("downvote")
-async def downvote_callback(action: cl.Action):
+@cl.action_callback("skip_product")
+async def skip_product_callback(action: cl.Action):
 	"""
-	Handles the downvote action.
+	Handles skipping a product (not adding it to the consumed list).
 	"""
-	await cl.Message(content="We'll do better next time!").send()
+	await cl.Message(content="⏭️ Produit non ajouté à votre liste.").send()
 
 @cl.on_chat_end
 async def on_chat_end():
