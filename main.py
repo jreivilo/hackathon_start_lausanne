@@ -1,5 +1,5 @@
 from src.utils.bedrock_runtime import get_bedrock_runtime
-from src.model.query_claude_3_7 import query_claude_3_7
+from src.model.claude.query_claude_3_7 import query_claude_3_7
 
 import chainlit as cl
 import base64
