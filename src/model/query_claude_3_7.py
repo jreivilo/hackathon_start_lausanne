@@ -181,13 +181,11 @@ def function_calling_query(input_text, json_schema, images=None):
     
     # 2. Second request - Explain the generated JSON
     explanation_prompt = f"""
-    Here is a set of structured data in JSON format:
+    Data: {json.dumps(tool_response, ensure_ascii=False)}
+    Question: "{input_text}"
     
-    ```json
-    {json.dumps(tool_response, ensure_ascii=False, indent=2)}
-    ```
-    
-    Explain in detail what each value means and how this data answers the original request: "{input_text}"
+    Answer the question directly based on this data. Be concise (2-3 sentences).
+    Respond in the same language as the question.
     """
     
     explanation_payload = create_bedrock_payload(
