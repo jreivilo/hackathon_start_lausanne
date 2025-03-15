@@ -12,93 +12,102 @@ from src.config.schemas import get_analysis_schema
 last_json_response = None
 
 async def process_message(message: cl.Message, trace):
-    """
-    Process incoming messages and generate appropriate responses.
-    
-    Args:
-        message: The incoming Chainlit message
-        
-    Returns:
-        Tuple containing response text and elements to display
-    """
-    global last_json_response
+	"""
+	Process incoming messages and generate appropriate responses.
+	
+	Args:
+		message: The incoming Chainlit message
+		
+	Returns:
+		Tuple containing response text and elements to display
+	"""
+	global last_json_response
 
-    # Check if message contains images
-    if message.elements:
-        span = trace.span(
+	# Check if message contains images
+	if message.elements:
+		span = trace.span(
 			name = "Extract images from message",
 			input = message.elements
 		)
-        # Extract images from message
-        elements, image_list = extract_images(message.elements)
-        span.end(
+		# Extract images from message
+		elements, image_list = extract_images(message.elements)
+		span.end(
 			output = image_list
 		)
-        
-        # Get structured response from Claude with images
-        function_response = function_calling_query(
-            input_text=message.content,
-            json_schema=get_analysis_schema(),
-            images=image_list
-        )
-        
-        print(f"Function response: {json.dumps(function_response, indent=2)}")
-        
-        # Store the JSON response
-        last_json_response = function_response.get("structured_data", {})
-        
-        # Extract structured data and explanation
-        structured_data = last_json_response
-        explanation = function_response.get("explanation", "")
-        
-        # Build an enriched response
-        response_text = explanation
-    else:
-        if last_json_response:
-            # Use the last JSON response to make a new query to Claude
-            explanation_prompt = f"""
-            Here is the last known product information:
-            
-            ```json
-            {json.dumps(last_json_response, ensure_ascii=False, indent=2)}
-            ```
-            
-            User question: {message.content}
-            
-            Please provide insights and explanations based on this data and the user's question.
-            Keep your response clear, precise, and concise - no more than 3-4 sentences.
-            Respond in the same language as the user's question.
-            """
-            
-            # Create payload using create_bedrock_payload
-            explanation_response = query_claude_3_7(explanation_prompt)
+		
+		# Get structured response from Claude with images
+		function_response = function_calling_query(
+			input_text=message.content,
+			json_schema=get_analysis_schema(),
+			images=image_list,
+			trace=trace
+		)
+		
+		# Store the JSON response
+		last_json_response = function_response.get("structured_data", {})
+		
+		# Extract structured data and explanation
+		structured_data = last_json_response
+		explanation = function_response.get("explanation", "")
+		
+		# Build an enriched response
+		response_text = explanation
+	else:
+		if last_json_response:
+			# Use the last JSON response to make a new query to Claude
+			explanation_prompt = f"""
+			Here is the last known product information:
+			
+			```json
+			{json.dumps(last_json_response, ensure_ascii=False, indent=2)}
+			```
+			
+			User question: {message.content}
+			
+			Please provide insights and explanations based on this data and the user's question.
+			Keep your response clear, precise, and concise - no more than 3-4 sentences.
+			Respond in the same language as the user's question.
+			"""
+			
+			# Create payload using create_bedrock_payload
+			span = trace.span(
+				name="Create payload for Bedrock",
+				input=explanation_prompt
+			)
+			
+			explanation_response = query_claude_3_7(explanation_prompt, trace)
 
-
-            response_text = explanation_response['content'][0]['text']
-            elements = None
-        else:
-            # If no image is sent and no previous JSON, respond politely
-            trace.span(
+			response_text = explanation_response['content'][0]['text']
+			span.end(
+				output=response_text
+			)
+			elements = None
+		else:
+			# If no image is sent and no previous JSON, respond politely
+			span= trace.span(
 				name="No image or previous JSON",
 				input=message
 			)
-            response_text = "Hello! If you have a question about a product's nutrition, please share an image of the product, and I'll be happy to assist you."
-            elements = []
+			response_text = "Hello! If you have a question about a product's nutrition, please share an image of the product, and I'll be happy to assist you."
+			elements = []
+			span.end(
+				output=response_text
+			)
 
-    # Log structured data for debugging
-    if last_json_response:
-        print(f"Structured data: {json.dumps(last_json_response, indent=2)}")
-    
-    return response_text, elements, last_json_response
+	# Log structured data for debugging
+	if last_json_response:
+		print(f"Structured data: {json.dumps(last_json_response, indent=2)}")
+	
+	return response_text, elements, last_json_response
 
 def format_response(structured_data, explanation):
-    """
-    Format the response text with structured data and explanation.
-    """
-    return f"""
+	"""
+	Format the response text with structured data and explanation.
+	"""
+	return f"""
 ### Response
 {structured_data.get('product', {}).get('name', 'No product name available')}
 
 ### Additional Details
 {explanation}
-    """
+	"""
