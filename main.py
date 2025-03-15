@@ -1,13 +1,5 @@
-import boto3
-import json
-import os
-from dotenv import load_dotenv
-
 from src.utils.bedrock_runtime import get_bedrock_runtime
 from src.model.query_claude_3_7 import query_claude_3_7
-
-# Call the function with an example input
-# query_claude_3_7("hello world")
 
 import chainlit as cl
 
