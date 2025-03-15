@@ -16,5 +16,5 @@ uv sync
 Run the code
 
 ```bash
-uv run hello.py
+uv run chainlit run main.py -w
 ```
