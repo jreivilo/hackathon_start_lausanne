@@ -1,5 +1,10 @@
 import chainlit as cl
-from src.handler.message_handler import process_message
+
+from src.handlers.message_handler import process_message
+
+
+
+#
 
 @cl.on_message
 async def main(message: cl.Message):

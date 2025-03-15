@@ -6,13 +6,13 @@ from PIL import Image
 
 
 
-def compress_image(base64_image, max_size_kb=1024):
+def compress_image(base64_image, max_size_kb=2048):
     """
     Compresses and resizes a base64 encoded image.
 
     Args:
         base64_image: Base64 encoded image
-        max_size_kb: Maximum desired size in KB
+        max_size_kb: Maximum desired size in KB (increased to 2MB)
 
     Returns:
         Tuple (compressed_img_base64, media_type): Compressed base64 image and its MIME type
@@ -26,8 +26,8 @@ def compress_image(base64_image, max_size_kb=1024):
         original_size = len(img_data)
         print(f"Original image size: {original_size / 1024:.2f} KB")
 
-        # First compression - moderate reduction
-        max_size = (512, 512)
+        # First compression - resize to maximum allowed size
+        max_size = (2048, 2048)  # Increased to 2048x2048
         img.thumbnail(max_size, Image.LANCZOS)
 
         # Determine format based on image mode
@@ -35,27 +35,27 @@ def compress_image(base64_image, max_size_kb=1024):
         img_format = "PNG" if is_transparent else "JPEG"
         media_type = f"image/{img_format.lower()}"
 
-        # Initial compression
+        # Initial compression with higher quality
         buffer = BytesIO()
         if is_transparent:
-            img.save(buffer, format="PNG", optimize=True, compress_level=9)
+            img.save(buffer, format="PNG", optimize=True, compress_level=6)
         else:
-            img.save(buffer, format="JPEG", quality=60, optimize=True)
+            img.save(buffer, format="JPEG", quality=80, optimize=True)
 
         compressed_data = buffer.getvalue()
         compressed_size = len(compressed_data)
         print(f"Compressed image size: {compressed_size / 1024:.2f} KB")
         print(f"Compression ratio: {compressed_size / original_size:.2f}")
 
-        # If still too large, reduce further
+        # If still too large, reduce further but maintain higher quality
         if compressed_size > max_size_kb * 1024:
             print("Image still too large, reducing further...")
-            img.thumbnail((384, 384), Image.LANCZOS)
+            img.thumbnail((1600, 1600), Image.LANCZOS)  # Fallback size
             buffer = BytesIO()
             if is_transparent:
-                img.save(buffer, format="PNG", optimize=True, compress_level=9)
+                img.save(buffer, format="PNG", optimize=True, compress_level=6)
             else:
-                img.save(buffer, format="JPEG", quality=50, optimize=True)
+                img.save(buffer, format="JPEG", quality=70, optimize=True)
             compressed_data = buffer.getvalue()
             print(f"Final image size: {len(compressed_data) / 1024:.2f} KB")
 

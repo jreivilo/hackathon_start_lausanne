@@ -4,7 +4,6 @@ from io import BytesIO
 from PIL import Image
 
 from src.utils.bedrock_runtime import get_bedrock_runtime
-from src.utils.images import compress_image
 
 bedrock_runtime = get_bedrock_runtime()
 
