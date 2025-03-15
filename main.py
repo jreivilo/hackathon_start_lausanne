@@ -6,10 +6,16 @@ async def main(message: cl.Message):
     """
     Main entry point for handling incoming messages from Chainlit.
     """
+    # Create a loading message
+    loading_msg = await cl.Message(content="⏳ Génération de la réponse...").send()
+    
     # Process the message and get a response
     response_text, elements = await process_message(message)
+    
+    # Delete the loading message
+    await loading_msg.remove()
 
-    # Send the response back to the user with Upvote and Downvote buttons
+    # Send the final response
     await cl.Message(
         content=response_text,
         elements=elements,
