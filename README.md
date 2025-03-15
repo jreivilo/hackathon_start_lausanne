@@ -18,3 +18,9 @@ Run the code
 ```bash
 uv run chainlit run main.py -w
 ```
+
+To add new packages
+
+```bash
+uv add <package>
+```
