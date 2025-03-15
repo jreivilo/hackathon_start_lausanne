@@ -1,4 +1,5 @@
 import chainlit as cl
+import asyncio
 
 from src.handlers.message_handler import process_message
 
@@ -70,24 +71,76 @@ async def main(message: cl.Message):
 	user_id = message.user.id
 	print(f"User ID: {user_id}")
 
-	# Create a loading message
-	loading_msg = await cl.Message(content="⏳ Génération de la réponse...").send()
+	# Create a loading message with initial text
+	loading_msg = cl.Message(content="⏳ Initializing request...")
+	loading_msg_id = await loading_msg.send()
 	
-	# Process the message and get a response
-	response_text, elements = await process_message(message)
+	# Define progress steps
+	progress_steps = [
+		"🔍 Analyzing your request...",
+		"📸 Processing image data..." if message.elements else "🧠 Thinking...",
+		"📊 Extracting nutritional information...",
+		"📝 Formulating response...",
+		"✨ Almost done..."
+	]
 	
-	# Delete the loading message
-	await loading_msg.remove()
+	try:
+		# Process each step with visible progress
+		for i, step in enumerate(progress_steps):
+			# Update message with current step
+			loading_msg.content = step
+			await loading_msg.update()
+			
+			# Simulate processing time for each step (except the last one)
+			if i < len(progress_steps) - 1:
+				await asyncio.sleep(1.5)
+		
+		# Process the message and get a response
+		response_text, elements = await process_message(message)
+		
+		# Update the loading message with the final response
+		loading_msg.content = response_text
+		if elements:
+			loading_msg.elements = elements
+		await loading_msg.update()
+	except Exception as e:
+		# Update with error message
+		loading_msg.content = f"❌ An error occurred: {str(e)}"
+		await loading_msg.update()
 
-	# Send the final response
-	await cl.Message(
-		content=response_text,
-		elements=elements,
-		actions=[
-			cl.Action(name="upvote", label="👍 The response is great!", payload={"vote": "up"}),
-			cl.Action(name="downvote", label="👎 Oh no...", payload={"vote": "down"})
-		]
-	).send()
+async def animate_progress(message, message_id, steps):
+	"""
+	Animates the progress message by updating it with different steps.
+	
+	Args:
+		message: The message object to update
+		message_id: The ID of the message
+		steps: List of step messages to display
+	"""
+	try:
+		for step in steps:
+			# Update message with current step
+			message.content = step
+			await message.update()
+			
+			# Wait for a short time before next update
+			await asyncio.sleep(1.5)
+		
+		# If we've gone through all steps but processing is still ongoing,
+		# show a cycling animation
+		dots = 1
+		while True:
+			dot_text = "." * dots
+			message.content = f"⏳ Finalizing{dot_text}"
+			await message.update()
+			dots = (dots % 3) + 1
+			await asyncio.sleep(0.8)
+	except asyncio.CancelledError:
+		# Task was cancelled, which is expected when processing completes
+		pass
+	except Exception as e:
+		# Log any unexpected errors
+		print(f"Animation error: {e}")
 
 @cl.action_callback("upvote")
 async def upvote_callback(action: cl.Action):
