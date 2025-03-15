@@ -25,8 +25,15 @@ async def process_message(message: cl.Message, trace):
 
     # Check if message contains images
     if message.elements:
+        span = trace.span(
+			name = "Extract images from message",
+			input = message.elements
+		)
         # Extract images from message
         elements, image_list = extract_images(message.elements)
+        span.end(
+			output = image_list
+		)
         
         # Get structured response from Claude with images
         function_response = function_calling_query(
@@ -34,6 +41,8 @@ async def process_message(message: cl.Message, trace):
             json_schema=get_analysis_schema(),
             images=image_list
         )
+        
+        print(f"Function response: {json.dumps(function_response, indent=2)}")
         
         # Store the JSON response
         last_json_response = function_response.get("structured_data", {})
@@ -69,6 +78,10 @@ async def process_message(message: cl.Message, trace):
             elements = None
         else:
             # If no image is sent and no previous JSON, respond politely
+            trace.span(
+				name="No image or previous JSON",
+				input=message
+			)
             response_text = "Hello! If you have a question about a product's nutrition, please share an image of the product, and I'll be happy to assist you."
             elements = []
 
