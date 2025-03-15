@@ -3,7 +3,6 @@ import base64
 import chainlit as cl
 
 from src.model.query_claude_3_7 import query_claude_3_7, function_calling_query, create_bedrock_payload
-from src.model.utils import invoke_claude_model
 from src.utils.image_processor import extract_images
 from src.config.schemas import get_analysis_schema
 
@@ -75,7 +74,7 @@ async def process_message(message: cl.Message, trace):
 				input=explanation_prompt
 			)
 			
-			explanation_response = query_claude_3_7(explanation_prompt, trace)
+			explanation_response = query_claude_3_7(explanation_prompt, trace, goal="Answer user question")
 
 			response_text = explanation_response['content'][0]['text']
 			span.end(

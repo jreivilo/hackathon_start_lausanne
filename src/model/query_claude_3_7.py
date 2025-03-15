@@ -108,7 +108,7 @@ def invoke_claude_model(payload, trace=None, goal=None):
 
 	return response_body
 
-def query_claude_3_7(input_text, images=None, trace=None):
+def query_claude_3_7(input_text, images=None, trace=None, goal=None):
 	"""
 	Main function to query Claude via Bedrock.
 	
@@ -123,7 +123,7 @@ def query_claude_3_7(input_text, images=None, trace=None):
 	payload = create_bedrock_payload(input_text, images)
 	
 	# Invoke model and return response
-	return invoke_claude_model(payload, trace)
+	return invoke_claude_model(payload, trace, goal)
 
 def function_calling_query(input_text, json_schema, images=None, trace=None):
 	"""
@@ -172,7 +172,6 @@ def function_calling_query(input_text, json_schema, images=None, trace=None):
 	)
 	
 	json_response = invoke_claude_model(json_payload, trace, goal="Extract structured data")
-	print(json_response)
 	
 	# Extract generated JSON
 	tool_response = None
