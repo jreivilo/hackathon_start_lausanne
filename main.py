@@ -24,11 +24,11 @@ async def upvote_callback(action: cl.Action):
     """
     Handles the upvote action.
     """
-    await cl.Message(content="✅ You upvoted this message!").send()
+    await cl.Message(content="Merci pour ton retour positif!").send()
 
 @cl.action_callback("downvote")
 async def downvote_callback(action: cl.Action):
     """
     Handles the downvote action.
     """
-    await cl.Message(content="❌ You downvoted this message!").send()
+    await cl.Message(content="On va faire mieux la prochaine fois!").send()
