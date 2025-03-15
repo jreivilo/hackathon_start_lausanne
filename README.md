@@ -60,4 +60,4 @@ uv run chainlit run main.py -w
 
 ---
 
-�� Happy Hacking! 🎉
+🚀 Happy Hacking! 🎉
